@@ -1,5 +1,5 @@
 package GUI;
-import BLL.OrderBLL;
+import bll.OrderBLL;
 import Model.Order;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -8,11 +8,16 @@ import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.text.NumberFormat;
 import java.util.List;
+import java.util.Date;
 import java.util.Locale;
 import javax.swing.border.Border;
+import java.sql.SQLException;
 
 public class OrderManagementPanel extends JPanel {
     private OrderBLL orderBLL = new OrderBLL();
@@ -21,9 +26,12 @@ public class OrderManagementPanel extends JPanel {
     private JTextField txtSearch;
     private JComboBox<String> cmbStatus;
     private NumberFormat currencyFormat;
+    private SimpleDateFormat dateFormat;
+    private String searchPlaceholder = "Mã đơn hàng hoặc tên khách hàng...";
     
     public OrderManagementPanel() {
         currencyFormat = NumberFormat.getInstance(new Locale("vi", "VN"));
+        dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         setLayout(new BorderLayout());
         setBackground(new Color(248, 249, 250));
         
@@ -73,6 +81,9 @@ public class OrderManagementPanel extends JPanel {
         btnAddOrder.setFocusPainted(false);
         btnAddOrder.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
+        // Add action listener for add button
+        btnAddOrder.addActionListener(e -> showAddOrderDialog());
+        
         headerPanel.add(titlePanel, BorderLayout.WEST);
         headerPanel.add(btnAddOrder, BorderLayout.EAST);
         
@@ -92,7 +103,7 @@ public class OrderManagementPanel extends JPanel {
         lblSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblSearch.setForeground(new Color(73, 80, 87));
         
-        txtSearch = new JTextField("Mã đơn hàng hoặc tên khách hàng...");
+        txtSearch = new JTextField(searchPlaceholder);
         txtSearch.setPreferredSize(new Dimension(400, 40));
         txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         txtSearch.setBorder(BorderFactory.createCompoundBorder(
@@ -102,12 +113,15 @@ public class OrderManagementPanel extends JPanel {
         txtSearch.setBackground(Color.WHITE);
         txtSearch.setForeground(new Color(108, 117, 125));
         
+        // Add placeholder behavior
+        setupPlaceholder(txtSearch);
+        
         // Status filter
         JLabel lblStatus = new JLabel("Trạng thái");
         lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblStatus.setForeground(new Color(73, 80, 87));
         
-        cmbStatus = new JComboBox<>(new String[]{"Tất cả", "Đã giao hàng", "Đang giao hàng", "Chờ xử lý"});
+        cmbStatus = new JComboBox<>(new String[]{"Tất cả", "Chờ xử lý", "Đang xử lý", "Đang giao hàng", "Đã giao hàng", "Đã hủy"});
         cmbStatus.setPreferredSize(new Dimension(200, 40));
         cmbStatus.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         cmbStatus.setBackground(Color.WHITE);
@@ -123,15 +137,51 @@ public class OrderManagementPanel extends JPanel {
         btnSearch.setFocusPainted(false);
         btnSearch.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
+        // Add search functionality
+        btnSearch.addActionListener(e -> performSearch());
+        
+        // Reset button
+        JButton btnReset = new JButton("🔄 Làm mới");
+        btnReset.setPreferredSize(new Dimension(120, 40));
+        btnReset.setBackground(new Color(108, 117, 125));
+        btnReset.setForeground(Color.WHITE);
+        btnReset.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnReset.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+        btnReset.setFocusPainted(false);
+        btnReset.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        btnReset.addActionListener(e -> resetSearch());
+        
         searchRow.add(lblSearch);
         searchRow.add(txtSearch);
         searchRow.add(lblStatus);
         searchRow.add(cmbStatus);
         searchRow.add(btnSearch);
+        searchRow.add(btnReset);
         
         searchPanel.add(searchRow, BorderLayout.CENTER);
         
         return searchPanel;
+    }
+    
+    private void setupPlaceholder(JTextField textField) {
+        textField.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (textField.getText().equals(searchPlaceholder)) {
+                    textField.setText("");
+                    textField.setForeground(Color.BLACK);
+                }
+            }
+            
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (textField.getText().isEmpty()) {
+                    textField.setText(searchPlaceholder);
+                    textField.setForeground(new Color(108, 117, 125));
+                }
+            }
+        });
     }
     
     private JPanel createTablePanel() {
@@ -202,7 +252,7 @@ public class OrderManagementPanel extends JPanel {
         columnModel.getColumn(2).setPreferredWidth(100); // Ngày đặt
         columnModel.getColumn(3).setPreferredWidth(120); // Tổng tiền
         columnModel.getColumn(4).setPreferredWidth(120); // Trạng thái
-        columnModel.getColumn(5).setPreferredWidth(100); // Thao tác
+        columnModel.getColumn(5).setPreferredWidth(150); // Thao tác
         
         // Custom cell renderers
         table.getColumnModel().getColumn(4).setCellRenderer(new StatusCellRenderer());
@@ -212,7 +262,7 @@ public class OrderManagementPanel extends JPanel {
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 if (evt.getClickCount() == 2 && table.getSelectedRow() != -1) {
-                    showUpdateStatusDialog(table.getSelectedRow());
+                    showOrderDetails(table.getSelectedRow());
                 }
             }
         });
@@ -265,22 +315,36 @@ public class OrderManagementPanel extends JPanel {
             setFont(new Font("Segoe UI", Font.BOLD, 11));
             
             String status = value.toString();
-            if (status.equals("Đã giao hàng") || status.equals("Delivered")) {
-                setBackground(new Color(212, 237, 218));
-                setForeground(new Color(21, 87, 36));
-                setText("Đã giao hàng");
-            } else if (status.equals("Đang giao hàng") || status.equals("Processing") || status.equals("Shipped")) {
-                setBackground(new Color(255, 243, 205));
-                setForeground(new Color(102, 77, 3));
-                setText("Đang giao hàng");
-            } else if (status.equals("Chờ xử lý") || status.equals("Pending")) {
-                setBackground(new Color(217, 237, 247));
-                setForeground(new Color(12, 84, 96));
-                setText("Chờ xử lý");
-            } else {
-                setBackground(new Color(253, 236, 234));
-                setForeground(new Color(114, 28, 36));
-                setText("Đã hủy");
+            switch (status) {
+                case "Đã giao hàng":
+                case "Delivered":
+                    setBackground(new Color(212, 237, 218));
+                    setForeground(new Color(21, 87, 36));
+                    setText("Đã giao hàng");
+                    break;
+                case "Đang giao hàng":
+                case "Shipped":
+                    setBackground(new Color(255, 243, 205));
+                    setForeground(new Color(102, 77, 3));
+                    setText("Đang giao hàng");
+                    break;
+                case "Đang xử lý":
+                case "Processing":
+                    setBackground(new Color(217, 237, 247));
+                    setForeground(new Color(12, 84, 96));
+                    setText("Đang xử lý");
+                    break;
+                case "Chờ xử lý":
+                case "Pending":
+                    setBackground(new Color(255, 248, 220));
+                    setForeground(new Color(133, 100, 4));
+                    setText("Chờ xử lý");
+                    break;
+                default:
+                    setBackground(new Color(253, 236, 234));
+                    setForeground(new Color(114, 28, 36));
+                    setText("Đã hủy");
+                    break;
             }
             
             setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
@@ -306,6 +370,7 @@ public class OrderManagementPanel extends JPanel {
             btnView.setFocusPainted(false);
             btnView.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnView.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+            btnView.addActionListener(e -> showOrderDetails(row));
             
             // Edit button  
             JButton btnEdit = new JButton("✏");
@@ -316,6 +381,7 @@ public class OrderManagementPanel extends JPanel {
             btnEdit.setFocusPainted(false);
             btnEdit.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnEdit.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+            btnEdit.addActionListener(e -> showEditOrderDialog(row));
             
             // Delete button
             JButton btnDelete = new JButton("🗑");
@@ -326,6 +392,7 @@ public class OrderManagementPanel extends JPanel {
             btnDelete.setFocusPainted(false);
             btnDelete.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnDelete.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+            btnDelete.addActionListener(e -> deleteOrder(row));
             
             panel.add(btnView);
             panel.add(btnEdit);
@@ -335,6 +402,353 @@ public class OrderManagementPanel extends JPanel {
         }
     }
     
+    // Search functionality
+    private void performSearch() {
+        String searchText = txtSearch.getText().equals(searchPlaceholder) ? "" : txtSearch.getText().trim();
+        String selectedStatus = (String) cmbStatus.getSelectedItem();
+        
+        model.setRowCount(0);
+        List<Order> orders = orderBLL.getAllOrders();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        
+        for (Order o : orders) {
+            boolean matchesSearch = searchText.isEmpty() || 
+                                  String.valueOf(o.getOrderId()).contains(searchText) ||
+                                  (o.getCustomerName() != null && o.getCustomerName().toLowerCase().contains(searchText.toLowerCase()));
+            
+            boolean matchesStatus = selectedStatus.equals("Tất cả") || 
+                                  statusMatches(o.getStatus(), selectedStatus);
+            
+            if (matchesSearch && matchesStatus) {
+                String formattedAmount = currencyFormat.format(o.getTotalAmount()) + " đ";
+                model.addRow(new Object[]{
+                    o.getOrderId(),
+                    o.getCustomerName(),
+                    o.getOrderDate() != null ? sdf.format(o.getOrderDate()) : "",
+                    formattedAmount,
+                    o.getStatus(),
+                    ""
+                });
+            }
+        }
+    }
+    
+    private boolean statusMatches(String orderStatus, String filterStatus) {
+        switch (filterStatus) {
+            case "Chờ xử lý":
+                return "Pending".equals(orderStatus) || "Chờ xử lý".equals(orderStatus);
+            case "Đang xử lý":
+                return "Processing".equals(orderStatus) || "Đang xử lý".equals(orderStatus);
+            case "Đang giao hàng":
+                return "Shipped".equals(orderStatus) || "Đang giao hàng".equals(orderStatus);
+            case "Đã giao hàng":
+                return "Delivered".equals(orderStatus) || "Đã giao hàng".equals(orderStatus);
+            case "Đã hủy":
+                return "Cancelled".equals(orderStatus) || "Đã hủy".equals(orderStatus);
+            default:
+                return true;
+        }
+    }
+    
+    private void resetSearch() {
+        txtSearch.setText(searchPlaceholder);
+        txtSearch.setForeground(new Color(108, 117, 125));
+        cmbStatus.setSelectedIndex(0);
+        refreshData();
+    }
+    
+    // Add new order dialog
+    private void showAddOrderDialog() {
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Thêm đơn hàng mới", true);
+        dialog.setSize(400, 300);
+        dialog.setLocationRelativeTo(this);
+        
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.anchor = GridBagConstraints.WEST;
+        
+        // Customer name
+        gbc.gridx = 0; gbc.gridy = 0;
+        panel.add(new JLabel("Tên khách hàng:"), gbc);
+        gbc.gridx = 1;
+        JTextField txtCustomerName = new JTextField(20);
+        panel.add(txtCustomerName, gbc);
+        
+        // Total amount
+        gbc.gridx = 0; gbc.gridy = 1;
+        panel.add(new JLabel("Tổng tiền:"), gbc);
+        gbc.gridx = 1;
+        JTextField txtTotalAmount = new JTextField(20);
+        panel.add(txtTotalAmount, gbc);
+        
+        // Status
+        gbc.gridx = 0; gbc.gridy = 2;
+        panel.add(new JLabel("Trạng thái:"), gbc);
+        gbc.gridx = 1;
+        JComboBox<String> cmbOrderStatus = new JComboBox<>(new String[]{"Pending", "Processing", "Shipped", "Delivered"});
+        panel.add(cmbOrderStatus, gbc);
+        
+        // Buttons
+        gbc.gridx = 0; gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        
+        JButton btnSave = new JButton("Lưu");
+        btnSave.setBackground(new Color(40, 167, 69));
+        btnSave.setForeground(Color.WHITE);
+        btnSave.addActionListener(e -> {
+            try {
+                String customerName = txtCustomerName.getText().trim();
+                String totalAmountStr = txtTotalAmount.getText().trim();
+                String status = (String) cmbOrderStatus.getSelectedItem();
+                
+                if (customerName.isEmpty() || totalAmountStr.isEmpty()) {
+                    JOptionPane.showMessageDialog(dialog, "Vui lòng nhập đầy đủ thông tin!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                double totalAmount = Double.parseDouble(totalAmountStr);
+                
+                Order newOrder = new Order();
+                newOrder.setCustomerName(customerName);
+                newOrder.setTotalAmount(BigDecimal.valueOf(totalAmount)); // Chuyển double sang BigDecimal
+                newOrder.setStatus(status);
+                newOrder.setOrderDate(new Date());
+                
+                orderBLL.addOrder(newOrder);
+                refreshData();
+                dialog.dispose();
+                JOptionPane.showMessageDialog(this, "Thêm đơn hàng thành công!");
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog, "Tổng tiền phải là số!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        
+        JButton btnCancel = new JButton("Hủy");
+        btnCancel.setBackground(new Color(108, 117, 125));
+        btnCancel.setForeground(Color.WHITE);
+        btnCancel.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(btnSave);
+        buttonPanel.add(btnCancel);
+        panel.add(buttonPanel, gbc);
+        
+        dialog.add(panel);
+        dialog.setVisible(true);
+    }
+    
+    // Edit order dialog
+    private void showEditOrderDialog(int row) {
+        try {
+            int orderId = (int) model.getValueAt(row, 0);
+            Order order = orderBLL.getOrderById(orderId);
+            
+            if (order == null) {
+                JOptionPane.showMessageDialog(this, "Không tìm thấy đơn hàng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Chỉnh sửa đơn hàng", true);
+            dialog.setSize(400, 300);
+            dialog.setLocationRelativeTo(this);
+            
+            JPanel panel = new JPanel(new GridBagLayout());
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.insets = new Insets(10, 10, 10, 10);
+            gbc.anchor = GridBagConstraints.WEST;
+            
+            // Customer name
+            gbc.gridx = 0; gbc.gridy = 0;
+            panel.add(new JLabel("Tên khách hàng:"), gbc);
+            gbc.gridx = 1;
+            JTextField txtCustomerName = new JTextField(order.getCustomerName(), 20);
+            panel.add(txtCustomerName, gbc);
+            
+            // Total amount
+            gbc.gridx = 0; gbc.gridy = 1;
+            panel.add(new JLabel("Tổng tiền:"), gbc);
+            gbc.gridx = 1;
+            JTextField txtTotalAmount = new JTextField(String.valueOf(order.getTotalAmount()), 20);
+            panel.add(txtTotalAmount, gbc);
+            
+            // Status
+            gbc.gridx = 0; gbc.gridy = 2;
+            panel.add(new JLabel("Trạng thái:"), gbc);
+            gbc.gridx = 1;
+            JComboBox<String> cmbOrderStatus = new JComboBox<>(new String[]{"Pending", "Processing", "Shipped", "Delivered", "Cancelled"});
+            cmbOrderStatus.setSelectedItem(order.getStatus());
+            panel.add(cmbOrderStatus, gbc);
+            
+            // Buttons
+            gbc.gridx = 0; gbc.gridy = 3;
+            gbc.gridwidth = 2;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            JPanel buttonPanel = new JPanel(new FlowLayout());
+            
+            JButton btnSave = new JButton("Lưu");
+            btnSave.setBackground(new Color(40, 167, 69));
+            btnSave.setForeground(Color.WHITE);
+            btnSave.addActionListener(e -> {
+                try {
+                    String customerName = txtCustomerName.getText().trim();
+                    String totalAmountStr = txtTotalAmount.getText().trim();
+                    String status = (String) cmbOrderStatus.getSelectedItem();
+                    
+                    if (customerName.isEmpty() || totalAmountStr.isEmpty()) {
+                        JOptionPane.showMessageDialog(dialog, "Vui lòng nhập đầy đủ thông tin!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    
+                    double totalAmount = Double.parseDouble(totalAmountStr);
+                    
+                    order.setCustomerName(customerName);
+                    order.setTotalAmount(BigDecimal.valueOf(totalAmount));
+                    order.setStatus(status);
+                    
+                    orderBLL.updateOrder(order);
+                    refreshData();
+                    dialog.dispose();
+                    JOptionPane.showMessageDialog(this, "Cập nhật đơn hàng thành công!");
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(dialog, "Tổng tiền phải là số!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(dialog, "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+            
+            JButton btnCancel = new JButton("Hủy");
+            btnCancel.setBackground(new Color(108, 117, 125));
+            btnCancel.setForeground(Color.WHITE);
+            btnCancel.addActionListener(e -> dialog.dispose());
+            
+            buttonPanel.add(btnSave);
+            buttonPanel.add(btnCancel);
+            panel.add(buttonPanel, gbc);
+            
+            dialog.add(panel);
+            dialog.setVisible(true);
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi lấy thông tin đơn hàng: " + e.getMessage(), 
+                                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+    
+    // Delete order
+    private void deleteOrder(int row) {
+        int orderId = (int) model.getValueAt(row, 0);
+        String customerName = (String) model.getValueAt(row, 1);
+        
+        int result = JOptionPane.showConfirmDialog(
+            this,
+            "Bạn có chắc chắn muốn xóa đơn hàng #" + orderId + " của khách hàng " + customerName + "?",
+            "Xác nhận xóa",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        );
+        
+        if (result == JOptionPane.YES_OPTION) {
+            try {
+                orderBLL.deleteOrder(orderId);
+                refreshData();
+                JOptionPane.showMessageDialog(this, "Xóa đơn hàng thành công!");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Lỗi khi xóa đơn hàng: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    
+    // Show order details
+    private void showOrderDetails(int orderId) {
+    try {
+        Order order = orderBLL.getOrderById(orderId);
+        if (order == null) {
+            JOptionPane.showMessageDialog(this, "Không tìm thấy đơn hàng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        StringBuilder details = new StringBuilder();
+        details.append("Mã đơn: ").append(order.getOrderId()).append("\n")
+               .append("Khách hàng: ").append(order.getCustomerName()).append("\n")
+               .append("Ngày đặt: ").append(order.getOrderDate() != null ? dateFormat.format(order.getOrderDate()) : "").append("\n")
+               .append("Tổng tiền: ").append(currencyFormat.format(order.getTotalAmount())).append("\n")
+               .append("Trạng thái: ").append(order.getStatus()).append("\n")
+               .append("Danh sách sản phẩm:\n");
+
+        List<Object[]> orderItems = orderBLL.getOrderItems(orderId);
+        if (orderItems != null && !orderItems.isEmpty()) {
+            for (Object[] item : orderItems) {
+                details.append("- ").append(item[0]).append(": ").append(item[1]).append(" x ").append(currencyFormat.format(item[2])).append("\n");
+            }
+        } else {
+            details.append("Không có thông tin sản phẩm.\n");
+        }
+
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Chi tiết đơn hàng", true);
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(400, 300);
+        dialog.setLocationRelativeTo(this);
+
+        JTextArea textArea = new JTextArea(details.toString());
+        textArea.setEditable(false);
+        textArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        dialog.add(new JScrollPane(textArea), BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton printButton = new JButton("In đơn hàng");
+        printButton.setBackground(new Color(52, 58, 64));
+        printButton.setForeground(Color.WHITE);
+        printButton.addActionListener(e -> {
+            JOptionPane.showMessageDialog(dialog, "Đang in đơn hàng " + orderId + "...", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        });
+        buttonPanel.add(printButton);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.setVisible(true);
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Lỗi khi lấy thông tin đơn hàng: " + e.getMessage(), 
+                                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
+    }
+}
+    
+    // Helper method to get Vietnamese status text
+    private String getVietnameseStatus(String status) {
+        switch (status) {
+            case "Pending": return "Chờ xử lý";
+            case "Processing": return "Đang xử lý";
+            case "Shipped": return "Đang giao hàng";
+            case "Delivered": return "Đã giao hàng";
+            case "Cancelled": return "Đã hủy";
+            default: return status;
+        }
+    }
+    
+    // Helper method to get status color
+    private Color getStatusColor(String status) {
+        switch (status) {
+            case "Delivered":
+            case "Đã giao hàng":
+                return new Color(21, 87, 36);
+            case "Shipped":
+            case "Đang giao hàng":
+                return new Color(102, 77, 3);
+            case "Processing":
+            case "Đang xử lý":
+                return new Color(12, 84, 96);
+            case "Pending":
+            case "Chờ xử lý":
+                return new Color(133, 100, 4);
+            default:
+                return new Color(114, 28, 36);
+        }
+    }
+    
+    // Refresh data method
     public void refreshData() {
         model.setRowCount(0);
         List<Order> orders = orderBLL.getAllOrders();
@@ -350,29 +764,6 @@ public class OrderManagementPanel extends JPanel {
                 o.getStatus(),
                 "" // Actions will be rendered by custom renderer
             });
-        }
-    }
-    
-    private void showUpdateStatusDialog(int row) {
-        int orderId = (int) model.getValueAt(row, 0);
-        String[] statuses = {"Pending", "Processing", "Shipped", "Delivered", "Cancelled"};
-        JComboBox<String> cmbStatus = new JComboBox<>(statuses);
-        cmbStatus.setSelectedItem(model.getValueAt(row, 4));
-        
-        JPanel panel = new JPanel(new GridLayout(0, 1));
-        panel.add(new JLabel("Cập nhật trạng thái đơn hàng:"));
-        panel.add(cmbStatus);
-        
-        int result = JOptionPane.showConfirmDialog(this, panel, "Cập nhật trạng thái", JOptionPane.OK_CANCEL_OPTION);
-        if (result == JOptionPane.OK_OPTION) {
-            String newStatus = (String) cmbStatus.getSelectedItem();
-            try {
-                orderBLL.updateOrderStatus(orderId, newStatus);
-                refreshData();
-                JOptionPane.showMessageDialog(this, "Cập nhật trạng thái thành công!");
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
         }
     }
     

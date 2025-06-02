@@ -1,7 +1,7 @@
 package GUI;
 
 import BLL.BookBLL;
-import BLL.OrderBLL;
+import bll.OrderBLL;
 import bll.CustomerBLL;
 import Model.Book;
 import Model.Order;
@@ -16,12 +16,13 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 import javax.swing.table.DefaultTableModel;
+import java.sql.SQLException;
 
 public class DashboardPanel extends JPanel {
-    private BookBLL bookBLL;
-    private OrderBLL orderBLL;
+  private BookBLL bookBLL;
+    private OrderBLL orderBLL; // *** Biến instance OrderBLL ***
     private CustomerBLL customerBLL;
-
+    
     private JLabel lblTotalBooks, lblTodayOrders, lblTotalCustomers, lblMonthRevenue;
     private DefaultTableModel orderModel, lowStockModel, bestSellModel;
     private JTable orderTable, lowStockTable;
@@ -32,8 +33,8 @@ public class DashboardPanel extends JPanel {
     public DashboardPanel() {
         UIManager.put("Label.font", new Font("Segoe UI", Font.PLAIN, 12));
         UIManager.put("Button.font", new Font("Segoe UI", Font.PLAIN, 12));
-        bookBLL = new BookBLL();
-        orderBLL = new OrderBLL();
+           bookBLL = new BookBLL();
+        orderBLL = new OrderBLL(); // *** Khởi tạo OrderBLL instance ***
         customerBLL = new CustomerBLL();
 
         setLayout(new BorderLayout());
@@ -362,50 +363,56 @@ public class DashboardPanel extends JPanel {
     }
 
     private void showOrderDetails(int orderId) {
-        Order order = orderBLL.getOrderById(orderId);
-        if (order == null) {
-            JOptionPane.showMessageDialog(this, "Không tìm thấy đơn hàng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        StringBuilder details = new StringBuilder();
-        details.append("Mã đơn: ").append(order.getOrderId()).append("\n")
-               .append("Khách hàng: ").append(order.getCustomerName()).append("\n")
-               .append("Ngày đặt: ").append(order.getOrderDate() != null ? dateFormat.format(order.getOrderDate()) : "").append("\n")
-               .append("Tổng tiền: ").append(currencyFormat.format(order.getTotalAmount())).append("\n")
-               .append("Trạng thái: ").append(order.getStatus()).append("\n")
-               .append("Danh sách sản phẩm:\n");
-
-        List<Object[]> orderItems = orderBLL.getOrderItems(orderId);
-        if (orderItems != null && !orderItems.isEmpty()) {
-            for (Object[] item : orderItems) {
-                details.append("- ").append(item[0]).append(": ").append(item[1]).append(" x ").append(currencyFormat.format(item[2])).append("\n");
+        try {
+            Order order = orderBLL.getOrderById(orderId);
+            if (order == null) {
+                JOptionPane.showMessageDialog(this, "Không tìm thấy đơn hàng!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
             }
-        } else {
-            details.append("Không có thông tin sản phẩm.\n");
+
+            StringBuilder details = new StringBuilder();
+            details.append("Mã đơn: ").append(order.getOrderId()).append("\n")
+                   .append("Khách hàng: ").append(order.getCustomerName()).append("\n")
+                   .append("Ngày đặt: ").append(order.getOrderDate() != null ? dateFormat.format(order.getOrderDate()) : "").append("\n")
+                   .append("Tổng tiền: ").append(currencyFormat.format(order.getTotalAmount())).append("\n")
+                   .append("Trạng thái: ").append(order.getStatus()).append("\n")
+                   .append("Danh sách sản phẩm:\n");
+
+            List<Object[]> orderItems = orderBLL.getOrderItems(orderId);
+            if (orderItems != null && !orderItems.isEmpty()) {
+                for (Object[] item : orderItems) {
+                    details.append("- ").append(item[0]).append(": ").append(item[1]).append(" x ").append(currencyFormat.format(item[2])).append("\n");
+                }
+            } else {
+                details.append("Không có thông tin sản phẩm.\n");
+            }
+
+            JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Chi tiết đơn hàng", true);
+            dialog.setLayout(new BorderLayout());
+            dialog.setSize(400, 300);
+            dialog.setLocationRelativeTo(this);
+
+            JTextArea textArea = new JTextArea(details.toString());
+            textArea.setEditable(false);
+            textArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            dialog.add(new JScrollPane(textArea), BorderLayout.CENTER);
+
+            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            JButton printButton = new JButton("In đơn hàng");
+            printButton.setBackground(new Color(52, 58, 64));
+            printButton.setForeground(Color.WHITE);
+            printButton.addActionListener(e -> {
+                JOptionPane.showMessageDialog(dialog, "Đang in đơn hàng " + orderId + "...", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            });
+            buttonPanel.add(printButton);
+            dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+            dialog.setVisible(true);
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi lấy thông tin đơn hàng: " + e.getMessage(), 
+                                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
-
-        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Chi tiết đơn hàng", true);
-        dialog.setLayout(new BorderLayout());
-        dialog.setSize(400, 300);
-        dialog.setLocationRelativeTo(this);
-
-        JTextArea textArea = new JTextArea(details.toString());
-        textArea.setEditable(false);
-        textArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        dialog.add(new JScrollPane(textArea), BorderLayout.CENTER);
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton printButton = new JButton("In đơn hàng");
-        printButton.setBackground(new Color(52, 58, 64));
-        printButton.setForeground(Color.WHITE);
-        printButton.addActionListener(e -> {
-            JOptionPane.showMessageDialog(dialog, "Đang in đơn hàng " + orderId + "...", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-        });
-        buttonPanel.add(printButton);
-        dialog.add(buttonPanel, BorderLayout.SOUTH);
-
-        dialog.setVisible(true);
     }
 
     private void showBookDetails(int bookId) {

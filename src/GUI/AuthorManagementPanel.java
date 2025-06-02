@@ -20,123 +20,232 @@ public class AuthorManagementPanel extends JPanel {
 
     public AuthorManagementPanel() {
         setLayout(new BorderLayout());
-        setBackground(new Color(248, 249, 250)); // Màu nền nhẹ nhàng hơn
+        setBackground(new Color(245, 247, 250)); // Màu nền xám nhạt
 
-        // ===== TOP AREA: Title, Search, Filter, Add Button =====
+        // ===== TOP AREA: Title and Controls =====
         JPanel topAreaPanel = new JPanel();
-        topAreaPanel.setLayout(new BoxLayout(topAreaPanel, BoxLayout.Y_AXIS)); // Sử dụng BoxLayout theo chiều dọc
+        topAreaPanel.setLayout(new BoxLayout(topAreaPanel, BoxLayout.Y_AXIS));
         topAreaPanel.setBackground(getBackground());
-        topAreaPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20)); // Padding quanh khu vực trên
+        topAreaPanel.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
 
         // Title Panel
-        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0)); // FlowLayout căn trái, không khoảng cách
+        JPanel titlePanel = new JPanel(new BorderLayout());
         titlePanel.setBackground(getBackground());
+        titlePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Left side - Icon and Title
+        JPanel titleLeftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        titleLeftPanel.setBackground(getBackground());
         JLabel iconLabel = new JLabel("👤");
-        iconLabel.setFont(new Font("Segoe UI", Font.BOLD, 24)); // Font và kích thước lớn hơn
+        iconLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         JLabel titleLabel = new JLabel(" Quản lý tác giả");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24)); // Font và kích thước lớn hơn
-        titleLabel.setForeground(new Color(52, 58, 64)); // Màu chữ đậm
-        titlePanel.add(iconLabel);
-        titlePanel.add(titleLabel);
-        titlePanel.setAlignmentX(Component.LEFT_ALIGNMENT); // Căn panel sang trái
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        titleLabel.setForeground(new Color(33, 37, 41));
+        titleLeftPanel.add(iconLabel);
+        titleLeftPanel.add(titleLabel);
 
-        // Search and Add Button Panel
-        JPanel searchAddPanel = new JPanel(new BorderLayout(20, 0)); // BorderLayout với khoảng cách ngang giữa search và add
-        searchAddPanel.setBackground(getBackground());
-        searchAddPanel.setAlignmentX(Component.LEFT_ALIGNMENT); // Căn panel sang trái
+        // Right side - Add button
+        JPanel titleRightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        titleRightPanel.setBackground(getBackground());
+        btnAdd = createStyledButton("+ Thêm tác giả mới", new Color(0, 123, 255));
+        titleRightPanel.add(btnAdd);
 
-        // Search and Filter Panel (Left side of searchAddPanel)
-        JPanel searchFilterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0)); // FlowLayout căn trái
-        searchFilterPanel.setBackground(getBackground());
+        titlePanel.add(titleLeftPanel, BorderLayout.WEST);
+        titlePanel.add(titleRightPanel, BorderLayout.EAST);
 
-        // Search field
-        txtSearch = new JTextField(15);
-        txtSearch.setPreferredSize(new Dimension(200, 35)); // Chiều cao lớn hơn
-        txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        txtSearch.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(206, 212, 218)), // Màu border nhạt hơn
-            BorderFactory.createEmptyBorder(8, 12, 8, 12) // Padding bên trong
+        // Search and Filter Panel with modern card design
+        JPanel searchCardPanel = new JPanel();
+        searchCardPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 15));
+        searchCardPanel.setBackground(Color.WHITE);
+        searchCardPanel.setBorder(BorderFactory.createCompoundBorder(
+            createRoundedBorder(12, new Color(0, 0, 0, 0)), // Transparent border for rounded effect
+            BorderFactory.createEmptyBorder(15, 20, 15, 20)
         ));
-        searchFilterPanel.add(new JLabel("Tìm kiếm:")); // Thêm label rõ ràng
-        searchFilterPanel.add(txtSearch);
 
-        // Country dropdown
-        String[] countries = {"-- Tất cả --", "Việt Nam", "Anh", "Mỹ", "Brazil", "Nhật Bản"}; // Dữ liệu mẫu
+        // Add shadow effect
+        searchCardPanel.setBorder(BorderFactory.createCompoundBorder(
+            createShadowBorder(),
+            BorderFactory.createCompoundBorder(
+                createRoundedBorder(12, new Color(220, 220, 220)),
+                BorderFactory.createEmptyBorder(15, 20, 15, 20)
+            )
+        ));
+
+        // Search field with modern styling
+        JPanel searchFieldPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        searchFieldPanel.setBackground(Color.WHITE);
+        JLabel searchLabel = new JLabel("Tìm kiếm:");
+        searchLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        searchLabel.setForeground(new Color(73, 80, 87));
+        
+        txtSearch = new JTextField("Tên tác giả...");
+        txtSearch.setPreferredSize(new Dimension(250, 40));
+        txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        txtSearch.setForeground(Color.GRAY);
+        txtSearch.setBorder(BorderFactory.createCompoundBorder(
+            createRoundedBorder(8, new Color(206, 212, 218)),
+            BorderFactory.createEmptyBorder(10, 15, 10, 15)
+        ));
+        
+        // Add placeholder behavior
+        addPlaceholderBehavior(txtSearch, "Tên tác giả...");
+        
+        searchFieldPanel.add(searchLabel);
+        searchFieldPanel.add(txtSearch);
+
+        // Country dropdown with modern styling
+        JPanel countryPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        countryPanel.setBackground(Color.WHITE);
+        JLabel countryLabel = new JLabel("Quốc gia:");
+        countryLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        countryLabel.setForeground(new Color(73, 80, 87));
+        
+        String[] countries = {"-- Tất cả --", "Việt Nam", "Anh", "Mỹ", "Brazil", "Nhật Bản"};
         cmbCountry = new JComboBox<>(countries);
-        cmbCountry.setPreferredSize(new Dimension(150, 35)); // Chiều cao lớn hơn
+        cmbCountry.setPreferredSize(new Dimension(180, 40));
         cmbCountry.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        searchFilterPanel.add(new JLabel("Quốc gia:")); // Thêm label rõ ràng
-        searchFilterPanel.add(cmbCountry);
+        cmbCountry.setBorder(createRoundedBorder(8, new Color(206, 212, 218)));
+        cmbCountry.setBackground(Color.WHITE);
+        
+        countryPanel.add(countryLabel);
+        countryPanel.add(cmbCountry);
 
         // Search button
-        btnSearch = new JButton("🔍 Tìm kiếm");
-        btnSearch.setFont(new Font("Segoe UI", Font.BOLD, 13)); // Font đậm
-        btnSearch.setBackground(new Color(0, 123, 255)); // Màu xanh dương
-        btnSearch.setForeground(Color.WHITE);
-        btnSearch.setFocusPainted(false);
-        btnSearch.setBorderPainted(false); // Bỏ border mặc định
-        btnSearch.setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18)); // Padding cho button
-        btnSearch.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        searchFilterPanel.add(btnSearch);
+        btnSearch = createStyledButton("🔍 Tìm kiếm", new Color(0, 123, 255));
 
-        // Add button (Right side of searchAddPanel)
-        btnAdd = new JButton("+ Thêm tác giả mới");
-        btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 13)); // Font đậm
-        btnAdd.setBackground(new Color(0, 123, 255)); // Màu xanh dương
-        btnAdd.setForeground(Color.WHITE);
-        btnAdd.setFocusPainted(false);
-        btnAdd.setBorderPainted(false); // Bỏ border mặc định
-        btnAdd.setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18)); // Padding cho button
-        btnAdd.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        JPanel addButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0)); // Panel chứa nút add, căn phải
-        addButtonPanel.setBackground(getBackground());
-        addButtonPanel.add(btnAdd);
+        searchCardPanel.add(searchFieldPanel);
+        searchCardPanel.add(countryPanel);
+        searchCardPanel.add(btnSearch);
 
-        searchAddPanel.add(searchFilterPanel, BorderLayout.CENTER);
-        searchAddPanel.add(addButtonPanel, BorderLayout.EAST);
-
-
-        // Add Title and Search/Add panels to the topAreaPanel
+        // Add components to top area
         topAreaPanel.add(titlePanel);
-        topAreaPanel.add(Box.createVerticalStrut(10)); // Khoảng cách giữa title và search/add
-        topAreaPanel.add(searchAddPanel);
+        topAreaPanel.add(Box.createVerticalStrut(20));
+        topAreaPanel.add(searchCardPanel);
 
-        // ===== TABLE AREA =====
-        createTable(); // Phương thức tạo và cấu hình JTable
+        // ===== TABLE AREA with Card Design =====
+        JPanel tableCardPanel = new JPanel(new BorderLayout());
+        tableCardPanel.setBackground(Color.WHITE);
+        tableCardPanel.setBorder(BorderFactory.createCompoundBorder(
+            createShadowBorder(),
+            BorderFactory.createCompoundBorder(
+                createRoundedBorder(12, new Color(220, 220, 220)),
+                BorderFactory.createEmptyBorder(0, 0, 0, 0)
+            )
+        ));
 
+        createTable();
         JScrollPane scroll = new JScrollPane(table);
-        scroll.setBorder(BorderFactory.createLineBorder(new Color(222, 226, 230))); // Border cho scroll pane
-        scroll.getViewport().setBackground(Color.WHITE); // Màu nền scroll pane
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.getViewport().setBackground(Color.WHITE);
+        scroll.setBackground(Color.WHITE);
+
+        tableCardPanel.add(scroll, BorderLayout.CENTER);
 
         // ===== ADD COMPONENTS TO MAIN PANEL =====
+        JPanel mainContentPanel = new JPanel(new BorderLayout());
+        mainContentPanel.setBackground(getBackground());
+        mainContentPanel.setBorder(BorderFactory.createEmptyBorder(0, 25, 25, 25));
+        mainContentPanel.add(tableCardPanel, BorderLayout.CENTER);
+
         add(topAreaPanel, BorderLayout.NORTH);
-        add(scroll, BorderLayout.CENTER);
+        add(mainContentPanel, BorderLayout.CENTER);
 
         // Load data
         refreshData();
 
-        // --- THÊM CÁC EVENT LISTENERS TRỞ LẠI ĐÂY ---
-        // Search events
+        // Event listeners
         btnSearch.addActionListener(e -> searchAuthors());
         txtSearch.addActionListener(e -> searchAuthors());
         cmbCountry.addActionListener(e -> searchAuthors());
-
-        // Add button event
         btnAdd.addActionListener(e -> showAddDialog());
 
         // Table double click for edit
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 if (evt.getClickCount() == 2 && table.getSelectedRow() != -1) {
-                    // Kiểm tra xem có click vào cột Thao tác không (nếu bạn có Editor cho cột này)
-                     // int col = table.columnAtPoint(evt.getPoint());
-                     // if (col != table.getColumn("Thao tác").getModelIndex()) {
-                         showEditDialog(table.getSelectedRow()); // Giả sử double click bất kỳ ô nào (trừ cột action nếu có editor) mở dialog sửa
-                     // }
+                    showEditDialog(table.getSelectedRow());
                 }
             }
         });
-        // --- KẾT THÚC THÊM CÁC EVENT LISTENERS ---
+    }
+
+    private JButton createStyledButton(String text, Color bgColor) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setBackground(bgColor);
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setBorderPainted(false);
+        button.setBorder(BorderFactory.createEmptyBorder(12, 24, 12, 24));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        // Add rounded corners
+        button.setBorder(BorderFactory.createCompoundBorder(
+            createRoundedBorder(8, bgColor),
+            BorderFactory.createEmptyBorder(12, 24, 12, 24)
+        ));
+        
+        return button;
+    }
+
+    private javax.swing.border.Border createRoundedBorder(int radius, Color color) {
+        return new javax.swing.border.AbstractBorder() {
+            @Override
+            public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(color);
+                g2.drawRoundRect(x, y, width - 1, height - 1, radius, radius);
+                g2.dispose();
+            }
+            
+            @Override
+            public Insets getBorderInsets(Component c) {
+                return new Insets(2, 2, 2, 2);
+            }
+        };
+    }
+
+    private javax.swing.border.Border createShadowBorder() {
+        return new javax.swing.border.AbstractBorder() {
+            @Override
+            public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Draw shadow
+                for (int i = 0; i < 4; i++) {
+                    g2.setColor(new Color(0, 0, 0, 5 - i));
+                    g2.drawRoundRect(x + i, y + i, width - 2*i - 1, height - 2*i - 1, 12, 12);
+                }
+                g2.dispose();
+            }
+            
+            @Override
+            public Insets getBorderInsets(Component c) {
+                return new Insets(4, 4, 4, 4);
+            }
+        };
+    }
+
+    private void addPlaceholderBehavior(JTextField textField, String placeholder) {
+        textField.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusGained(java.awt.event.FocusEvent e) {
+                if (textField.getText().equals(placeholder)) {
+                    textField.setText("");
+                    textField.setForeground(Color.BLACK);
+                }
+            }
+            
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                if (textField.getText().isEmpty()) {
+                    textField.setText(placeholder);
+                    textField.setForeground(Color.GRAY);
+                }
+            }
+        });
     }
 
     private void createTable() {
@@ -155,40 +264,41 @@ public class AuthorManagementPanel extends JPanel {
                 return super.getColumnClass(columnIndex);
             }
         };
+        
         table = new JTable(model);
-        table.setRowHeight(80);
-        table.setGridColor(new Color(230, 230, 230));
-        table.setSelectionBackground(new Color(240, 248, 255));
-        table.setFont(new Font("Arial", Font.PLAIN, 12));
+        table.setRowHeight(90);
+        table.setGridColor(new Color(248, 249, 250));
+        table.setSelectionBackground(new Color(232, 245, 255));
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        table.setShowHorizontalLines(true);
+        table.setShowVerticalLines(false);
+        table.setIntercellSpacing(new Dimension(0, 1));
         
+        // Header styling
         table.getTableHeader().setBackground(new Color(248, 249, 250));
-        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
-        table.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 220, 220)));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        table.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(233, 236, 239)));
+        table.getTableHeader().setPreferredSize(new Dimension(0, 45));
         
-        table.getColumnModel().getColumn(0).setPreferredWidth(50);
-        table.getColumnModel().getColumn(1).setPreferredWidth(80);
-        table.getColumnModel().getColumn(2).setPreferredWidth(150);
-        table.getColumnModel().getColumn(3).setPreferredWidth(100);
-        table.getColumnModel().getColumn(4).setPreferredWidth(300);
-        table.getColumnModel().getColumn(5).setPreferredWidth(80);
-        table.getColumnModel().getColumn(6).setPreferredWidth(160);
+        // Column widths
+        table.getColumnModel().getColumn(0).setPreferredWidth(60);
+        table.getColumnModel().getColumn(1).setPreferredWidth(90);
+        table.getColumnModel().getColumn(2).setPreferredWidth(180);
+        table.getColumnModel().getColumn(3).setPreferredWidth(120);
+        table.getColumnModel().getColumn(4).setPreferredWidth(350);
+        table.getColumnModel().getColumn(5).setPreferredWidth(100);
+        table.getColumnModel().getColumn(6).setPreferredWidth(180);
         
         table.getColumn("Thao tác").setCellRenderer(new ActionButtonRenderer());
-        
-        JScrollPane scroll = new JScrollPane(table);
-        scroll.setBorder(BorderFactory.createEmptyBorder());
-
-        // Load data
-        refreshData();
     }
 
-    // Custom renderer for action buttons
+    // Custom renderer for action buttons with modern design
     class ActionButtonRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
             
-            JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
+            JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 8));
             panel.setOpaque(true);
             
             if (isSelected) {
@@ -197,38 +307,39 @@ public class AuthorManagementPanel extends JPanel {
                 panel.setBackground(table.getBackground());
             }
             
-            // View button (cyan)
-            JButton btnView = new JButton("View");
-            btnView.setBackground(new Color(0, 188, 212));
-            btnView.setForeground(Color.WHITE);
-            btnView.setPreferredSize(new Dimension(50, 25));
-            btnView.setBorderPainted(false);
-            btnView.setFocusPainted(false);
-            btnView.setFont(new Font("Arial", Font.PLAIN, 10));
+            // View button (cyan/teal)
+            JButton btnView = createActionButton("👁", new Color(23, 162, 184), "Xem");
             
             // Edit button (orange)
-            JButton btnEdit = new JButton("Edit");
-            btnEdit.setBackground(new Color(255, 152, 0));
-            btnEdit.setForeground(Color.WHITE);
-            btnEdit.setPreferredSize(new Dimension(50, 25));
-            btnEdit.setBorderPainted(false);
-            btnEdit.setFocusPainted(false);
-            btnEdit.setFont(new Font("Arial", Font.PLAIN, 10));
+            JButton btnEdit = createActionButton("✏", new Color(255, 193, 7), "Sửa");
             
             // Delete button (red)
-            JButton btnDelete = new JButton("Del");
-            btnDelete.setBackground(new Color(244, 67, 54));
-            btnDelete.setForeground(Color.WHITE);
-            btnDelete.setPreferredSize(new Dimension(50, 25));
-            btnDelete.setBorderPainted(false);
-            btnDelete.setFocusPainted(false);
-            btnDelete.setFont(new Font("Arial", Font.PLAIN, 10));
+            JButton btnDelete = createActionButton("🗑", new Color(220, 53, 69), "Xóa");
             
             panel.add(btnView);
             panel.add(btnEdit);
             panel.add(btnDelete);
             
             return panel;
+        }
+        
+        private JButton createActionButton(String icon, Color bgColor, String tooltip) {
+            JButton button = new JButton(icon);
+            button.setBackground(bgColor);
+            button.setForeground(Color.WHITE);
+            button.setPreferredSize(new Dimension(35, 35));
+            button.setBorderPainted(false);
+            button.setFocusPainted(false);
+            button.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            button.setToolTipText(tooltip);
+            button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            
+            // Make button circular
+            button.setBorder(BorderFactory.createEmptyBorder());
+            button.setContentAreaFilled(false);
+            button.setOpaque(true);
+            
+            return button;
         }
     }
 
@@ -243,7 +354,7 @@ public class AuthorManagementPanel extends JPanel {
                 try {
                     ImageIcon originalIcon = new ImageIcon(new java.net.URL(a.getImageUrl()));
                     if (originalIcon.getIconWidth() > 0) {
-                        Image scaledImage = originalIcon.getImage().getScaledInstance(80, 80 * originalIcon.getIconHeight() / originalIcon.getIconWidth(), Image.SCALE_SMOOTH);
+                        Image scaledImage = originalIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
                         authorImage = new ImageIcon(scaledImage);
                     }
                 } catch (Exception e) {
@@ -266,6 +377,8 @@ public class AuthorManagementPanel extends JPanel {
 
     private void searchAuthors() {
         String keyword = txtSearch.getText().trim();
+        if (keyword.equals("Tên tác giả...")) keyword = "";
+        
         String selectedCountry = (String) cmbCountry.getSelectedItem();
         
         model.setRowCount(0);
@@ -286,7 +399,7 @@ public class AuthorManagementPanel extends JPanel {
                     try {
                         ImageIcon originalIcon = new ImageIcon(new java.net.URL(a.getImageUrl()));
                         if (originalIcon.getIconWidth() > 0) {
-                            Image scaledImage = originalIcon.getImage().getScaledInstance(80, 80 * originalIcon.getIconHeight() / originalIcon.getIconWidth(), Image.SCALE_SMOOTH);
+                            Image scaledImage = originalIcon.getImage().getScaledInstance(70, 70, Image.SCALE_SMOOTH);
                             authorImage = new ImageIcon(scaledImage);
                         }
                     } catch (Exception e) {

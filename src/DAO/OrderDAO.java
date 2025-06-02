@@ -2,6 +2,7 @@ package DAO;
 
 import Model.Order;
 import Util.DatabaseConnection;
+import static Util.DatabaseConnection.getConnection;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,40 +42,42 @@ public class OrderDAO {
         return orders;
     }
     
-    public Order getOrderById(int orderId) {
-        Order order = null;
-        String sql = """
-            SELECT o.order_id, o.customer_id, o.order_date, o.total_amount, 
-                   o.status, o.shipping_address, o.payment_method, c.name as customer_name
-            FROM ORDERS o
-            LEFT JOIN CUSTOMERS c ON o.customer_id = c.customer_id
-            WHERE o.order_id = ?
-            """;
-        
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
-            stmt.setInt(1, orderId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    order = new Order();
-                    order.setOrderId(rs.getInt("order_id"));
-                    order.setCustomerId(rs.getInt("customer_id"));
-                    order.setOrderDate(rs.getTimestamp("order_date"));
-                    order.setTotalAmount(rs.getBigDecimal("total_amount"));
-                    order.setStatus(rs.getString("status"));
-                    order.setShippingAddress(rs.getString("shipping_address"));
-                    order.setPaymentMethod(rs.getString("payment_method"));
-                    order.setCustomerName(rs.getString("customer_name"));
-                }
-            }
+    public boolean updateOrderStatus(int orderId, String newStatus) throws SQLException {
+         String sql = "UPDATE Orders SET Status = ? WHERE OrderId = ?";
+         try (Connection conn = getConnection();
+              PreparedStatement ps = conn.prepareStatement(sql)) {
+
+             ps.setString(1, newStatus);
+             ps.setInt(2, orderId);
+
+             int rowsAffected = ps.executeUpdate();
+
+             return rowsAffected > 0; // Trả về true nếu thành công
+         } catch (SQLException e) {
+             System.err.println("Lỗi SQL tại OrderDAO khi cập nhật trạng thái đơn hàng (" + orderId + "): " + e.getMessage());
+             e.printStackTrace();
+             throw e;
+         }
+     }
+    public boolean deleteOrder(int orderId) throws SQLException {
+        String sql = "DELETE FROM Orders WHERE OrderId = ?"; // Thay thế tên bảng và cột
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, orderId);
+
+            int rowsAffected = ps.executeUpdate();
+
+            return rowsAffected > 0; // Trả về true nếu có ít nhất 1 dòng bị xóa
+
+//>>>>>>> Stashed changes
         } catch (SQLException e) {
+            System.err.println("Lỗi SQL tại OrderDAO khi xóa đơn hàng (" + orderId + "): " + e.getMessage());
             e.printStackTrace();
+            throw e;
         }
-        return order;
     }
-    
-    public List<Object[]> getOrderItems(int orderId) {
+     public List<Object[]> getOrderItems(int orderId) {
         List<Object[]> orderItems = new ArrayList<>();
         String sql = """
             SELECT b.title, od.quantity, od.unit_price
@@ -102,23 +105,28 @@ public class OrderDAO {
         }
         return orderItems;
     }
-    
-    public boolean updateOrderStatus(int orderId, String status) {
-        String sql = "UPDATE ORDERS SET status = ? WHERE order_id = ?";
-        
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
-            stmt.setString(1, status);
-            stmt.setInt(2, orderId);
-            
-            return stmt.executeUpdate() > 0;
+    public boolean updateOrder(Order order) throws SQLException {
+        // Câu lệnh UPDATE (thay thế tên bảng và cột)
+        String sql = "UPDATE Orders SET CustomerName = ?, OrderDate = ?, TotalAmount = ?, Status = ? WHERE OrderId = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, order.getCustomerName());
+             ps.setDate(2, order.getOrderDate() != null ? new java.sql.Date(order.getOrderDate().getTime()) : null);
+            ps.setBigDecimal(3, order.getTotalAmount());
+            ps.setString(4, order.getStatus());
+            ps.setInt(5, order.getOrderId()); // Điều kiện WHERE
+
+            int rowsAffected = ps.executeUpdate();
+
+            return rowsAffected > 0; // Trả về true nếu có ít nhất 1 dòng được cập nhật
+
         } catch (SQLException e) {
+            System.err.println("Lỗi SQL tại OrderDAO khi cập nhật đơn hàng (" + order.getOrderId() + "): " + e.getMessage());
             e.printStackTrace();
-            return false;
+            throw e;
         }
     }
-    
     public int getTotalOrders() {
         String sql = "SELECT COUNT(*) FROM ORDERS";
         
@@ -134,7 +142,55 @@ public class OrderDAO {
         }
         return 0;
     }
-    
+    public boolean addOrder(Order order) throws SQLException {
+        // Câu lệnh INSERT (thay thế tên bảng và cột)
+        String sql = "INSERT INTO Orders (CustomerName, OrderDate, TotalAmount, Status) VALUES (?, ?, ?, ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            // Thiết lập các tham số từ đối tượng Order
+            ps.setString(1, order.getCustomerName());
+            // Chuyển đổi java.util.Date sang java.sql.Date
+            ps.setDate(2, order.getOrderDate() != null ? new java.sql.Date(order.getOrderDate().getTime()) : null);
+            ps.setBigDecimal(3, order.getTotalAmount());
+            ps.setString(4, order.getStatus());
+
+            int rowsAffected = ps.executeUpdate();
+
+            return rowsAffected > 0; // Trả về true nếu có ít nhất 1 dòng được thêm
+
+        } catch (SQLException e) {
+            System.err.println("Lỗi SQL tại OrderDAO khi thêm đơn hàng: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+     public Order getOrderById(int orderId) throws SQLException {
+        String sql = "SELECT OrderId, CustomerName, OrderDate, TotalAmount, Status FROM Orders WHERE OrderId = ?"; // Thay thế tên bảng và cột
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, orderId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Order order = new Order();
+                    order.setOrderId(rs.getInt("OrderId"));
+                    order.setCustomerName(rs.getString("CustomerName"));
+                    order.setOrderDate(rs.getDate("OrderDate"));
+                    order.setTotalAmount(rs.getBigDecimal("TotalAmount"));
+                    order.setStatus(rs.getString("Status"));
+                    return order; // Trả về đối tượng Order nếu tìm thấy
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Lỗi SQL tại OrderDAO khi lấy đơn hàng theo ID (" + orderId + "): " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+        return null; // Trả về null nếu không tìm thấy hoặc có lỗi
+    }
     public int getTodayOrders() {
         String sql = "SELECT COUNT(*) FROM ORDERS WHERE CAST(order_date AS DATE) = CAST(GETDATE() AS DATE)";
         
@@ -170,39 +226,31 @@ public class OrderDAO {
         return total;
     }
     
-    public List<Object[]> getBestSellingBooks(int limit) {
-        List<Object[]> bestSellers = new ArrayList<>();
-        String sql = """
-            SELECT TOP (?)
-                b.book_id,
-                b.title,
-                SUM(od.quantity) as total_quantity,
-                SUM(od.quantity * od.unit_price) as total_revenue
-            FROM ORDER_DETAILS od
-            JOIN BOOKS b ON od.book_id = b.book_id
-            JOIN ORDERS o ON od.order_id = o.order_id
-            GROUP BY b.book_id, b.title
-            ORDER BY total_quantity DESC
-            """;
-
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, limit);
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    Object[] row = new Object[]{
-                        rs.getInt("book_id"),
-                        rs.getString("title"),
-                        rs.getLong("total_quantity"),
-                        rs.getBigDecimal("total_revenue")
-                    };
-                    bestSellers.add(row);
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Error in getBestSellingBooks: " + e.getMessage());
-            e.printStackTrace();
+public List<Object[]> getBestSellingBooks(int limit) throws SQLException {
+    List<Object[]> result = new ArrayList<>();
+    String sql = "SELECT TOP (?) b.BookID, b.Title, SUM(oi.Quantity) as TotalSold, " +
+                 "SUM(oi.Quantity * oi.Price) as TotalRevenue " +
+                 "FROM OrderItems oi " +
+                 "JOIN Books b ON oi.BookID = b.BookID " +
+                 "GROUP BY b.BookID, b.Title " +
+                 "ORDER BY TotalSold DESC";
+                 
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        
+        stmt.setInt(1, limit);
+        ResultSet rs = stmt.executeQuery();
+        
+        while (rs.next()) {
+            Object[] row = new Object[4];
+            row[0] = rs.getInt("BookID");
+            row[1] = rs.getString("Title");
+            row[2] = rs.getInt("TotalSold");
+            row[3] = rs.getBigDecimal("TotalRevenue");
+            result.add(row);
         }
-        return bestSellers;
     }
+    
+    return result;
+}
 }
