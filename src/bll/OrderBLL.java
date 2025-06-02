@@ -11,9 +11,25 @@ public class OrderBLL {
     public OrderBLL() {
         this.orderDAO = new OrderDAO();
     }
+
+    public Order getOrderById(int orderId) {
+        if (orderId <= 0) {
+            throw new IllegalArgumentException("ID đơn hàng không hợp lệ");
+        }
+        return orderDAO.getOrderById(orderId);
+    }
+
+    public List<Object[]> getOrderItems(int orderId) {
+        if (orderId <= 0) {
+            throw new IllegalArgumentException("ID đơn hàng không hợp lệ");
+        }
+        return orderDAO.getOrderItems(orderId);
+    }
+
     public BigDecimal getMonthRevenue(int month, int year) {
         return orderDAO.getMonthRevenue(month, year);
     }
+
     public List<Order> getAllOrders() {
         return orderDAO.getAllOrders();
     }
@@ -51,4 +67,12 @@ public class OrderBLL {
     public int getTodayOrders() {
         return orderDAO.getTodayOrders();
     }
+
+    public List<Object[]> getBestSellingBooks(int limit) {
+        if (limit <= 0) {
+            throw new IllegalArgumentException("Giới hạn phải lớn hơn 0");
+        }
+        return orderDAO.getBestSellingBooks(limit);
+    }
+
 }

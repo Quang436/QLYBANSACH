@@ -5,7 +5,8 @@ import DAO.BookDAO;
 import java.util.List;
 
 public class BookBLL {
-    private BookDAO bookDAO = new BookDAO();
+    private BookDAO bookDAO;
+
     public BookBLL() {
         this.bookDAO = new BookDAO();
     }
@@ -13,6 +14,14 @@ public class BookBLL {
     public List<Book> getAllBooks() {
         return bookDAO.getAllBooks();
     }
+
+    public Book getBookById(int bookId) {
+        if (bookId <= 0) {
+            throw new IllegalArgumentException("ID sách không hợp lệ");
+        }
+        return bookDAO.getBookById(bookId);
+    }
+
     public boolean addBook(Book book) {
         // Validate book data
         if (book.getTitle() == null || book.getTitle().trim().isEmpty()) {
@@ -58,4 +67,5 @@ public class BookBLL {
         
         return bookDAO.searchBooks(keyword.trim());
     }
+
 }

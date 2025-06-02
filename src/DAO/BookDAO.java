@@ -50,6 +50,49 @@ public class BookDAO {
         return books;
     }
     
+    public Book getBookById(int bookId) {
+        Book book = null;
+        String sql = """
+            SELECT b.book_id, b.title, b.author_id, b.category_id, b.publisher_id, 
+                   b.ISBN, b.price, b.stock_quantity, b.publication_date, 
+                   b.description, b.image_url,
+                   a.name as author_name, c.name as category_name, p.name as publisher_name
+            FROM BOOKS b
+            LEFT JOIN AUTHORS a ON b.author_id = a.author_id
+            LEFT JOIN CATEGORIES c ON b.category_id = c.category_id
+            LEFT JOIN PUBLISHERS p ON b.publisher_id = p.publisher_id
+            WHERE b.book_id = ?
+            """;
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, bookId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    book = new Book();
+                    book.setBookId(rs.getInt("book_id"));
+                    book.setTitle(rs.getString("title"));
+                    book.setAuthorId(rs.getInt("author_id"));
+                    book.setCategoryId(rs.getInt("category_id"));
+                    book.setPublisherId(rs.getInt("publisher_id"));
+                    book.setIsbn(rs.getString("ISBN"));
+                    book.setPrice(rs.getBigDecimal("price"));
+                    book.setStockQuantity(rs.getInt("stock_quantity"));
+                    book.setPublicationDate(rs.getDate("publication_date"));
+                    book.setDescription(rs.getString("description"));
+                    book.setImageUrl(rs.getString("image_url"));
+                    book.setAuthorName(rs.getString("author_name"));
+                    book.setCategoryName(rs.getString("category_name"));
+                    book.setPublisherName(rs.getString("publisher_name"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return book;
+    }
+    
     public boolean addBook(Book book) {
         String sql = """
             INSERT INTO BOOKS (title, author_id, category_id, publisher_id, ISBN, 
@@ -109,20 +152,20 @@ public class BookDAO {
     }
     
     public int countBooksInCategory(int categoryId) {
-    int count = 0;
-    try (Connection conn = DatabaseConnection.getConnection()) {
-        String sql = "SELECT COUNT(*) FROM Book WHERE categoryId = ?";
-        PreparedStatement ps = conn.prepareStatement(sql);
-        ps.setInt(1, categoryId);
-        ResultSet rs = ps.executeQuery();
-        if (rs.next()) {
-            count = rs.getInt(1);
+        int count = 0;
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            String sql = "SELECT COUNT(*) FROM BOOKS WHERE category_id = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, categoryId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-    } catch (Exception e) {
-        e.printStackTrace();
+        return count;
     }
-    return count;
-}
     
     public boolean deleteBook(int bookId) {
         String sql = "DELETE FROM BOOKS WHERE book_id = ?";
