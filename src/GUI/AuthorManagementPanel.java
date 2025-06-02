@@ -15,126 +15,171 @@ public class AuthorManagementPanel extends JPanel {
     private DefaultTableModel model;
     private JTextField txtSearch;
     private JComboBox<String> cmbCountry;
+    private JButton btnSearch;
+    private JButton btnAdd;
 
     public AuthorManagementPanel() {
         setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
+        setBackground(new Color(248, 249, 250)); // Màu nền nhẹ nhàng hơn
 
-        // Header panel with title and add button
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(Color.WHITE);
-        
-        // Title with icon
-        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        titlePanel.setBackground(Color.WHITE);
+        // ===== TOP AREA: Title, Search, Filter, Add Button =====
+        JPanel topAreaPanel = new JPanel();
+        topAreaPanel.setLayout(new BoxLayout(topAreaPanel, BoxLayout.Y_AXIS)); // Sử dụng BoxLayout theo chiều dọc
+        topAreaPanel.setBackground(getBackground());
+        topAreaPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20)); // Padding quanh khu vực trên
+
+        // Title Panel
+        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0)); // FlowLayout căn trái, không khoảng cách
+        titlePanel.setBackground(getBackground());
         JLabel iconLabel = new JLabel("👤");
-        iconLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        iconLabel.setFont(new Font("Segoe UI", Font.BOLD, 24)); // Font và kích thước lớn hơn
         JLabel titleLabel = new JLabel(" Quản lý tác giả");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24)); // Font và kích thước lớn hơn
+        titleLabel.setForeground(new Color(52, 58, 64)); // Màu chữ đậm
         titlePanel.add(iconLabel);
         titlePanel.add(titleLabel);
-        
-        // Add button (top right)
-        JButton btnAdd = new JButton("+ Thêm tác giả mới");
-        btnAdd.setBackground(new Color(0, 123, 255));
-        btnAdd.setForeground(Color.WHITE);
-        btnAdd.setFocusPainted(false);
-        btnAdd.setBorderPainted(false);
-        btnAdd.setPreferredSize(new Dimension(150, 35));
-        
-        headerPanel.add(titlePanel, BorderLayout.WEST);
-        headerPanel.add(btnAdd, BorderLayout.EAST);
+        titlePanel.setAlignmentX(Component.LEFT_ALIGNMENT); // Căn panel sang trái
 
-        // Search panel
-        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
-        searchPanel.setBackground(Color.WHITE);
-        
+        // Search and Add Button Panel
+        JPanel searchAddPanel = new JPanel(new BorderLayout(20, 0)); // BorderLayout với khoảng cách ngang giữa search và add
+        searchAddPanel.setBackground(getBackground());
+        searchAddPanel.setAlignmentX(Component.LEFT_ALIGNMENT); // Căn panel sang trái
+
+        // Search and Filter Panel (Left side of searchAddPanel)
+        JPanel searchFilterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0)); // FlowLayout căn trái
+        searchFilterPanel.setBackground(getBackground());
+
         // Search field
-        JLabel lblSearch = new JLabel("Tìm kiếm");
         txtSearch = new JTextField(15);
-        txtSearch.setPreferredSize(new Dimension(200, 30));
+        txtSearch.setPreferredSize(new Dimension(200, 35)); // Chiều cao lớn hơn
+        txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         txtSearch.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+            BorderFactory.createLineBorder(new Color(206, 212, 218)), // Màu border nhạt hơn
+            BorderFactory.createEmptyBorder(8, 12, 8, 12) // Padding bên trong
         ));
-        
+        searchFilterPanel.add(new JLabel("Tìm kiếm:")); // Thêm label rõ ràng
+        searchFilterPanel.add(txtSearch);
+
         // Country dropdown
-        JLabel lblCountry = new JLabel("Quốc gia");
-        String[] countries = {"-- Tất cả --", "Việt Nam", "Anh", "Mỹ", "Brazil", "Nhật Bản"};
+        String[] countries = {"-- Tất cả --", "Việt Nam", "Anh", "Mỹ", "Brazil", "Nhật Bản"}; // Dữ liệu mẫu
         cmbCountry = new JComboBox<>(countries);
-        cmbCountry.setPreferredSize(new Dimension(150, 30));
-        
+        cmbCountry.setPreferredSize(new Dimension(150, 35)); // Chiều cao lớn hơn
+        cmbCountry.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        searchFilterPanel.add(new JLabel("Quốc gia:")); // Thêm label rõ ràng
+        searchFilterPanel.add(cmbCountry);
+
         // Search button
-        JButton btnSearch = new JButton("Tìm kiếm");
-        btnSearch.setBackground(new Color(0, 123, 255));
+        btnSearch = new JButton("🔍 Tìm kiếm");
+        btnSearch.setFont(new Font("Segoe UI", Font.BOLD, 13)); // Font đậm
+        btnSearch.setBackground(new Color(0, 123, 255)); // Màu xanh dương
         btnSearch.setForeground(Color.WHITE);
         btnSearch.setFocusPainted(false);
-        btnSearch.setBorderPainted(false);
-        btnSearch.setPreferredSize(new Dimension(120, 30));
-        
-        searchPanel.add(lblSearch);
-        searchPanel.add(txtSearch);
-        searchPanel.add(Box.createHorizontalStrut(20));
-        searchPanel.add(lblCountry);
-        searchPanel.add(cmbCountry);
-        searchPanel.add(Box.createHorizontalStrut(10));
-        searchPanel.add(btnSearch);
+        btnSearch.setBorderPainted(false); // Bỏ border mặc định
+        btnSearch.setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18)); // Padding cho button
+        btnSearch.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        searchFilterPanel.add(btnSearch);
 
-        // Top container
-        JPanel topContainer = new JPanel(new BorderLayout());
-        topContainer.setBackground(Color.WHITE);
-        topContainer.add(headerPanel, BorderLayout.NORTH);
-        topContainer.add(searchPanel, BorderLayout.CENTER);
-        topContainer.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        // Add button (Right side of searchAddPanel)
+        btnAdd = new JButton("+ Thêm tác giả mới");
+        btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 13)); // Font đậm
+        btnAdd.setBackground(new Color(0, 123, 255)); // Màu xanh dương
+        btnAdd.setForeground(Color.WHITE);
+        btnAdd.setFocusPainted(false);
+        btnAdd.setBorderPainted(false); // Bỏ border mặc định
+        btnAdd.setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18)); // Padding cho button
+        btnAdd.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JPanel addButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0)); // Panel chứa nút add, căn phải
+        addButtonPanel.setBackground(getBackground());
+        addButtonPanel.add(btnAdd);
 
-        // Table
-        String[] cols = {"ID", "Ảnh", "Tên tác giả", "Quốc gia", "Tiểu sử", "Số tác phẩm", "Thao tác"};
-        model = new DefaultTableModel(cols, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) { return false; }
-        };
-        table = new JTable(model);
-        table.setRowHeight(80);
-        table.setGridColor(new Color(230, 230, 230));
-        table.setSelectionBackground(new Color(240, 248, 255));
-        
-        // Custom cell renderer for action buttons
-        table.getColumn("Thao tác").setCellRenderer(new ActionButtonRenderer());
-        
-        // Set column widths
-        table.getColumnModel().getColumn(0).setPreferredWidth(50);  // ID
-        table.getColumnModel().getColumn(1).setPreferredWidth(80);  // Ảnh
-        table.getColumnModel().getColumn(2).setPreferredWidth(150); // Tên
-        table.getColumnModel().getColumn(3).setPreferredWidth(100); // Quốc gia
-        table.getColumnModel().getColumn(4).setPreferredWidth(300); // Tiểu sử
-        table.getColumnModel().getColumn(5).setPreferredWidth(80);  // Số tác phẩm
-        table.getColumnModel().getColumn(6).setPreferredWidth(160); // Thao tác
-        
+        searchAddPanel.add(searchFilterPanel, BorderLayout.CENTER);
+        searchAddPanel.add(addButtonPanel, BorderLayout.EAST);
+
+
+        // Add Title and Search/Add panels to the topAreaPanel
+        topAreaPanel.add(titlePanel);
+        topAreaPanel.add(Box.createVerticalStrut(10)); // Khoảng cách giữa title và search/add
+        topAreaPanel.add(searchAddPanel);
+
+        // ===== TABLE AREA =====
+        createTable(); // Phương thức tạo và cấu hình JTable
+
         JScrollPane scroll = new JScrollPane(table);
-        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.setBorder(BorderFactory.createLineBorder(new Color(222, 226, 230))); // Border cho scroll pane
+        scroll.getViewport().setBackground(Color.WHITE); // Màu nền scroll pane
 
-        add(topContainer, BorderLayout.NORTH);
+        // ===== ADD COMPONENTS TO MAIN PANEL =====
+        add(topAreaPanel, BorderLayout.NORTH);
         add(scroll, BorderLayout.CENTER);
 
         // Load data
         refreshData();
 
+        // --- THÊM CÁC EVENT LISTENERS TRỞ LẠI ĐÂY ---
         // Search events
         btnSearch.addActionListener(e -> searchAuthors());
         txtSearch.addActionListener(e -> searchAuthors());
         cmbCountry.addActionListener(e -> searchAuthors());
 
-        // Add event
+        // Add button event
         btnAdd.addActionListener(e -> showAddDialog());
 
         // Table double click for edit
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 if (evt.getClickCount() == 2 && table.getSelectedRow() != -1) {
-                    showEditDialog(table.getSelectedRow());
+                    // Kiểm tra xem có click vào cột Thao tác không (nếu bạn có Editor cho cột này)
+                     // int col = table.columnAtPoint(evt.getPoint());
+                     // if (col != table.getColumn("Thao tác").getModelIndex()) {
+                         showEditDialog(table.getSelectedRow()); // Giả sử double click bất kỳ ô nào (trừ cột action nếu có editor) mở dialog sửa
+                     // }
                 }
             }
         });
+        // --- KẾT THÚC THÊM CÁC EVENT LISTENERS ---
+    }
+
+    private void createTable() {
+        String[] cols = {"ID", "Ảnh", "Tên tác giả", "Quốc gia", "Tiểu sử", "Số tác phẩm", "Thao tác"};
+        model = new DefaultTableModel(cols, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                if (columnIndex == 1) {
+                    return ImageIcon.class;
+                }
+                return super.getColumnClass(columnIndex);
+            }
+        };
+        table = new JTable(model);
+        table.setRowHeight(80);
+        table.setGridColor(new Color(230, 230, 230));
+        table.setSelectionBackground(new Color(240, 248, 255));
+        table.setFont(new Font("Arial", Font.PLAIN, 12));
+        
+        table.getTableHeader().setBackground(new Color(248, 249, 250));
+        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        table.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 220, 220)));
+        
+        table.getColumnModel().getColumn(0).setPreferredWidth(50);
+        table.getColumnModel().getColumn(1).setPreferredWidth(80);
+        table.getColumnModel().getColumn(2).setPreferredWidth(150);
+        table.getColumnModel().getColumn(3).setPreferredWidth(100);
+        table.getColumnModel().getColumn(4).setPreferredWidth(300);
+        table.getColumnModel().getColumn(5).setPreferredWidth(80);
+        table.getColumnModel().getColumn(6).setPreferredWidth(160);
+        
+        table.getColumn("Thao tác").setCellRenderer(new ActionButtonRenderer());
+        
+        JScrollPane scroll = new JScrollPane(table);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+
+        // Load data
+        refreshData();
     }
 
     // Custom renderer for action buttons
@@ -191,17 +236,30 @@ public class AuthorManagementPanel extends JPanel {
         model.setRowCount(0);
         List<Author> authors = authorBLL.getAllAuthors();
         for (Author a : authors) {
-            // Simulate work count (you can replace with actual logic)
             int workCount = (int)(Math.random() * 3) + 1;
-            
+
+            ImageIcon authorImage = null;
+            if (a.getImageUrl() != null && !a.getImageUrl().isEmpty()) {
+                try {
+                    ImageIcon originalIcon = new ImageIcon(new java.net.URL(a.getImageUrl()));
+                    if (originalIcon.getIconWidth() > 0) {
+                        Image scaledImage = originalIcon.getImage().getScaledInstance(80, 80 * originalIcon.getIconHeight() / originalIcon.getIconWidth(), Image.SCALE_SMOOTH);
+                        authorImage = new ImageIcon(scaledImage);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error loading image for author " + a.getName() + ": " + e.getMessage());
+                    authorImage = null;
+                }
+            }
+
             model.addRow(new Object[]{
                 a.getAuthorId(),
-                a.getImageUrl() == null ? "" : new ImageIcon(a.getImageUrl()),
+                authorImage,
                 a.getName(),
                 a.getCountry(),
                 a.getBio(),
                 workCount,
-                "" // Action buttons will be rendered by custom renderer
+                ""
             });
         }
     }
@@ -222,10 +280,24 @@ public class AuthorManagementPanel extends JPanel {
             
             if (matchesKeyword && matchesCountry) {
                 int workCount = (int)(Math.random() * 3) + 1;
-                
+
+                ImageIcon authorImage = null;
+                if (a.getImageUrl() != null && !a.getImageUrl().isEmpty()) {
+                    try {
+                        ImageIcon originalIcon = new ImageIcon(new java.net.URL(a.getImageUrl()));
+                        if (originalIcon.getIconWidth() > 0) {
+                            Image scaledImage = originalIcon.getImage().getScaledInstance(80, 80 * originalIcon.getIconHeight() / originalIcon.getIconWidth(), Image.SCALE_SMOOTH);
+                            authorImage = new ImageIcon(scaledImage);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error loading image for author " + a.getName() + ": " + e.getMessage());
+                        authorImage = null;
+                    }
+                }
+
                 model.addRow(new Object[]{
                     a.getAuthorId(),
-                    a.getImageUrl() == null ? "" : new ImageIcon(a.getImageUrl()),
+                    authorImage,
                     a.getName(),
                     a.getCountry(),
                     a.getBio(),

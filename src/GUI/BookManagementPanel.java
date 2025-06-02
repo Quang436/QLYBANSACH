@@ -19,6 +19,8 @@ import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
+import javax.swing.table.TableCellRenderer;
+import java.net.URL;
 
 public class BookManagementPanel extends JPanel {
     private BookBLL bookBLL;
@@ -511,39 +513,104 @@ public class BookManagementPanel extends JPanel {
     public void refreshData() {
         SwingUtilities.invokeLater(() -> {
             try {
-                // Clear table
-                tableModel.setRowCount(0);
-                
-                // Load books
+                System.out.println("Bắt đầu refresh data (UI Thread)...");
+
                 List<Book> books = bookBLL.getAllBooks();
-                for (Book book : books) {
-                    ImageIcon imageIcon = new ImageIcon(book.getImageUrl());
-                    Image image = imageIcon.getImage().getScaledInstance(60, 80, Image.SCALE_SMOOTH);
-                    
-                    Object[] row = {
-                        book.getBookId(),
-                        new ImageIcon(image),
-                        book.getTitle(),
-                        book.getAuthorName(),
-                        book.getCategoryName(),
-                        currencyFormat.format(book.getPrice()),
-                        book.getStockQuantity(),
-                        "" // Actions column handled by custom renderer
-                    };
-                    tableModel.addRow(row);
+                System.out.println("Số lượng sách tải về: " + (books != null ? books.size() : "null"));
+
+                tableModel.setRowCount(0);
+
+                if (books != null) {
+                    for (Book book : books) {
+                        ImageIcon imageIcon = null;
+                        String imageUrl = book.getImageUrl();
+                        System.out.println("Đang xử lý sách ID: " + book.getBookId() + ", Image URL: " + imageUrl);
+
+                        if (imageUrl != null && !imageUrl.isEmpty()) {
+                            try {
+                                URL url = new URL(imageUrl);
+                                imageIcon = new ImageIcon(url);
+
+                                if (imageIcon.getIconWidth() > 0 && imageIcon.getIconHeight() > 0) {
+                                    Image image = imageIcon.getImage();
+                                    int rowHeight = bookTable.getRowHeight();
+                                    int preferredColWidth = bookTable.getColumnModel().getColumn(1).getPreferredWidth();
+
+                                    int originalWidth = imageIcon.getIconWidth();
+                                    int originalHeight = imageIcon.getIconHeight();
+
+                                    int scaledWidth = originalWidth;
+                                    int scaledHeight = originalHeight;
+
+                                    if (originalHeight > rowHeight) {
+                                        scaledHeight = rowHeight;
+                                        scaledWidth = (int) ((double) originalWidth * scaledHeight / originalHeight);
+                                    }
+
+                                    if (scaledWidth > preferredColWidth) {
+                                        scaledWidth = preferredColWidth;
+                                        scaledHeight = (int) ((double) originalHeight * scaledWidth / originalWidth);
+                                    }
+
+                                    if (scaledWidth > 0 && scaledHeight > 0) {
+                                        Image scaledImage = image.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
+                                        imageIcon = new ImageIcon(scaledImage);
+                                        System.out.println("Ảnh scale thành công cho ID " + book.getBookId() + ": " + scaledWidth + "x" + scaledHeight);
+                                    } else {
+                                        imageIcon = null;
+                                        System.err.println("Ảnh scale ra kích thước không hợp lệ cho ID " + book.getBookId());
+                                    }
+
+                                } else {
+                                    System.err.println("Không tải được ảnh từ URL: " + imageUrl + " cho sách ID " + book.getBookId());
+                                    imageIcon = null;
+                                }
+
+                            } catch (Exception e) {
+                                System.err.println("Lỗi xử lý ảnh URL: " + imageUrl + " cho sách ID " + book.getBookId() + ": " + e.getMessage());
+                                e.printStackTrace();
+                                imageIcon = null;
+                            }
+                        } else {
+                            System.out.println("URL ảnh rỗng hoặc null cho sách ID " + book.getBookId());
+                            imageIcon = null;
+                        }
+
+                        Object[] row = {
+                            book.getBookId(),
+                            imageIcon,
+                            book.getTitle(),
+                            book.getAuthorName(),
+                            book.getCategoryName(),
+                            currencyFormat.format(book.getPrice()),
+                            book.getStockQuantity(),
+                            ""
+                        };
+                        tableModel.addRow(row);
+                        System.out.println("Đã thêm dòng cho sách ID: " + book.getBookId());
+                    }
                 }
-                
-                // Refresh comboboxes
+
                 refreshComboBoxes();
-                
+
+                if (bookTable != null) {
+                    bookTable.revalidate();
+                    bookTable.repaint();
+                    System.out.println("Table revalidate/repaint.");
+                }
+
+                System.out.println("Refresh data UI Thread hoàn thành!");
+
             } catch (Exception e) {
+                System.err.println("Lỗi trong refreshData (UI Thread catch block): " + e.getMessage());
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(this,
-                    "Lỗi khi tải dữ liệu: " + e.getMessage(),
+                    "Lỗi khi tải dữ liệu sách: " + e.getMessage(),
                     "Lỗi",
                     JOptionPane.ERROR_MESSAGE);
             }
         });
+        System.out.println("refreshData() method finished (Initial Thread).");
     }
     
     private void refreshComboBoxes() {
@@ -561,4 +628,4 @@ public class BookManagementPanel extends JPanel {
             cmbAuthor.addItem(author.getName());
         }
     }
-    }
+}
