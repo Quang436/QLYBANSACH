@@ -35,7 +35,7 @@ public class PublisherManagementPanel extends JPanel {
         headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
 
         // Title with icon
-        JLabel titleLabel = new JLabel("🏢 Quản lý nhà xuất bản");
+        JLabel titleLabel = new JLabel("▲ Quản lý nhà xuất bản");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         titleLabel.setForeground(new Color(51, 51, 51));
 
@@ -93,7 +93,7 @@ public class PublisherManagementPanel extends JPanel {
         JPanel searchRow2 = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         searchRow2.setBackground(Color.WHITE);
         
-        JButton btnSearch = new JButton("🔍 Tìm kiếm");
+        JButton btnSearch = new JButton("○ Tìm kiếm");
         btnSearch.setBackground(new Color(0, 123, 255));
         btnSearch.setForeground(Color.WHITE);
         btnSearch.setFont(new Font("Arial", Font.BOLD, 12));
@@ -226,7 +226,7 @@ public class PublisherManagementPanel extends JPanel {
             
             // Create a simple logo placeholder
             String publisherName = (String) table.getValueAt(row, 2);
-            String logoText = "NXB " + publisherName.substring(publisherName.lastIndexOf(" ") + 1);
+            String logoText = "NXB " + (publisherName.length() > 0 ? publisherName.substring(Math.max(0, publisherName.lastIndexOf(" ") + 1)) : "");
             label.setText(logoText);
             label.setFont(new Font("Arial", Font.BOLD, 10));
             label.setOpaque(true);
@@ -257,7 +257,7 @@ public class PublisherManagementPanel extends JPanel {
                 panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
                 panel.setOpaque(true);
                 
-                JLabel phoneLabel = new JLabel("ĐT: " + (publisher.getPhone() != null ? publisher.getPhone() : "N/A"));
+                JLabel phoneLabel = new JLabel("DT: " + (publisher.getPhone() != null ? publisher.getPhone() : "N/A"));
                 JLabel emailLabel = new JLabel("Email: " + (publisher.getEmail() != null ? publisher.getEmail() : "N/A"));
                 
                 phoneLabel.setFont(new Font("Arial", Font.PLAIN, 11));
@@ -293,9 +293,9 @@ public class PublisherManagementPanel extends JPanel {
             setLayout(new FlowLayout(FlowLayout.CENTER, 2, 5));
             setOpaque(true);
             
-            viewBtn = createActionButton("👁", new Color(23, 162, 184), Color.WHITE);
-            editBtn = createActionButton("✏", new Color(255, 193, 7), Color.BLACK);
-            deleteBtn = createActionButton("🗑", new Color(220, 53, 69), Color.WHITE);
+            viewBtn = createActionButton("◎", new Color(23, 162, 184), Color.WHITE);
+            editBtn = createActionButton("◆", new Color(255, 193, 7), Color.BLACK);
+            deleteBtn = createActionButton("✕", new Color(220, 53, 69), Color.WHITE);
             
             add(viewBtn);
             add(editBtn);
@@ -306,7 +306,7 @@ public class PublisherManagementPanel extends JPanel {
             JButton btn = new JButton(text);
             btn.setBackground(bgColor);
             btn.setForeground(textColor);
-            btn.setFont(new Font("Arial", Font.PLAIN, 12));
+            btn.setFont(new Font("Arial", Font.BOLD, 12));
             btn.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
             btn.setFocusPainted(false);
             btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -338,9 +338,9 @@ public class PublisherManagementPanel extends JPanel {
             super(new JCheckBox());
             
             panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 5));
-            viewBtn = createActionButton("👁", new Color(23, 162, 184), Color.WHITE);
-            editBtn = createActionButton("✏", new Color(255, 193, 7), Color.BLACK);
-            deleteBtn = createActionButton("🗑", new Color(220, 53, 69), Color.WHITE);
+            viewBtn = createActionButton("◎", new Color(23, 162, 184), Color.WHITE);
+            editBtn = createActionButton("◆", new Color(255, 193, 7), Color.BLACK);
+            deleteBtn = createActionButton("✕", new Color(220, 53, 69), Color.WHITE);
             
             viewBtn.addActionListener(e -> {
                 fireEditingStopped();
@@ -366,7 +366,7 @@ public class PublisherManagementPanel extends JPanel {
             JButton btn = new JButton(text);
             btn.setBackground(bgColor);
             btn.setForeground(textColor);
-            btn.setFont(new Font("Arial", Font.PLAIN, 12));
+            btn.setFont(new Font("Arial", Font.BOLD, 12));
             btn.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
             btn.setFocusPainted(false);
             btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
